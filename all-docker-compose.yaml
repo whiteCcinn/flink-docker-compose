@@ -1,0 +1,235 @@
+version: '3'
+
+networks:
+  flink-networks:
+    name: flink-networks
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.6.0/24
+
+services:
+  mysql:
+    container_name: flink-mysql
+    build:
+      context: ./deploy/mysql
+      args:
+        - MYSQL_VERSION=${MYSQL_VERSION}
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=${MYSQL_TIMEZONE}
+    volumes:
+      - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+    privileged: true
+    ports:
+      - '${MYSQL_PORT}:3306'
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.2
+
+  kafka1:
+    build:
+      context: ./deploy/kafka
+      args:
+        scala_version: ${SCALA_VERSION}
+        kafka_version: ${KAFKA_VERSION}
+    container_name: flink-kafka1
+    ports:
+      - '19092:19092'
+    environment:
+      KAFKA_PORT: 19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://kafka1:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL_PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://:19092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.211
+    extra_hosts:
+      - 'zookeeper:192.168.6.215'
+      - 'kafka1:192.168.6.211'
+      - 'kafka2:192.168.6.212'
+      - 'kafka3:192.168.6.213'
+      - 'kafka4:192.168.6.214'
+    depends_on:
+      - zookeeper
+
+  kafka2:
+    build:
+      context: ./deploy/kafka
+      args:
+        scala_version: ${SCALA_VERSION}
+        kafka_version: ${KAFKA_VERSION}
+    container_name: flink-kafka2
+    ports:
+      - '19093:19093'
+    environment:
+      KAFKA_PORT: 19093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://kafka2:19093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL_PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://:19093
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.212
+    extra_hosts:
+      - 'zookeeper:192.168.6.215'
+      - 'kafka1:192.168.6.211'
+      - 'kafka2:192.168.6.212'
+      - 'kafka3:192.168.6.213'
+      - 'kafka4:192.168.6.214'
+    depends_on:
+      - zookeeper
+      - kafka1
+
+  kafka3:
+    build:
+      context: ./deploy/kafka
+      args:
+        scala_version: ${SCALA_VERSION}
+        kafka_version: ${KAFKA_VERSION}
+    container_name: flink-kafka3
+    ports:
+      - '19094:19094'
+    environment:
+      KAFKA_PORT: 19094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://kafka2:19094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL_PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://:19094
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.213
+    extra_hosts:
+      - 'zookeeper:192.168.6.215'
+      - 'kafka1:192.168.6.211'
+      - 'kafka2:192.168.6.212'
+      - 'kafka3:192.168.6.213'
+      - 'kafka4:192.168.6.214'
+    depends_on:
+      - zookeeper
+      - kafka2
+
+  kafka4:
+    build:
+      context: ./deploy/kafka
+      args:
+        scala_version: ${SCALA_VERSION}
+        kafka_version: ${KAFKA_VERSION}
+    container_name: flink-kafka4
+    ports:
+      - '19095:19095'
+    environment:
+      KAFKA_PORT: 19095
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://kafka2:19095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL_PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://:19095
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.214
+    extra_hosts:
+      - 'zookeeper:192.168.6.215'
+      - 'kafka1:192.168.6.211'
+      - 'kafka2:192.168.6.212'
+      - 'kafka3:192.168.6.213'
+      - 'kafka4:192.168.6.214'
+    depends_on:
+      - zookeeper
+      - kafka3
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: flink-zookeeper
+    environment:
+      ZOOKEEPER_VERSION: 3.5.6
+    ports:
+      - '2181:2181'
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.215
+    extra_hosts:
+      - 'zookeeper:192.168.6.215'
+      - 'kafka1:192.168.6.211'
+      - 'kafka2:192.168.6.212'
+      - 'kafka3:192.168.6.213'
+      - 'kafka4:192.168.6.214'
+
+  hadoop-master:
+    build:
+      context: ./deploy/hadoop
+      args:
+        HADOOP_VERSION: ${HADOOP_VERSION}
+    container_name: flink-hadoop-master
+    ports:
+      - '50070:50070'
+      - '8088:8088'
+    command: sh -c "service ssh start;./start-hadoop.sh;tail -f /dev/null"
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.216
+    depends_on:
+      - hadoop-slave1
+      - hadoop-slave2
+
+  hadoop-slave1:
+    build:
+      context: ./deploy/hadoop
+      args:
+        HADOOP_VERSION: ${HADOOP_VERSION}
+    container_name: flink-hadoop-slave1
+    command: sh -c "service ssh start;tail -f /dev/null"
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.217
+
+  hadoop-slave2:
+    build:
+      context: ./deploy/hadoop
+      args:
+        HADOOP_VERSION: ${HADOOP_VERSION}
+    container_name: flink-hadoop-slave2
+    command: sh -c "service ssh start;tail -f /dev/null"
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.218
+
+  hive:
+    build:
+      context: ./deploy/hive
+      args:
+        HIVE_VERSION: ${HIVE_VERSION}
+    container_name: flink-hive
+    command: sh -c "./start-hive.sh;tail -f /dev/null"
+    networks:
+      flink-networks:
+        ipv4_address: 192.168.6.219
+    depends_on:
+      - mysql
+      - hadoop-master
+
+#  flink:
+#    build:
+#      context: ./deploy/flink
+#      args:
+#        FLINK_VERSION: ${FLINK_VERSION}
+#        SCALA_VERSION: ${SCALA_VERSION}
+#        HIVE_VERSION: ${HIVE_VERSION}
+#    container_name: flink-flink
+#    command: sh -c "tail -f /dev/null"
+#    ports:
+#      - '8081:8081'
+#    volumes:
+#      - ./:/www
+#    working_dir: /www
+#    networks:
+#      flink-networks:
+#        ipv4_address: 192.168.6.220
+#    depends_on:
+#      - hive
