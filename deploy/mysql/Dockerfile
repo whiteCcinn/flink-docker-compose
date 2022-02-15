@@ -1,7 +1,7 @@
 ARG MYSQL_VERSION=latest
 FROM mysql:${MYSQL_VERSION}
 
-LABEL maintainer="Wenhui Cai <471113744@qq.com>"
+MAINTAINER caiwenhui <github.com/whiteCcinn>
 
 #####################################
 # Set Timezone

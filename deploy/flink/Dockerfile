@@ -5,7 +5,7 @@ ARG SCALA_VERSION=2.11
 ARG HIVE_VERSION=3.1.0
 ARG KAFKA_VERSION=2.4.0
 
-MAINTAINER caiwenhui <caiwenhui591@mingchao.com>
+MAINTAINER caiwenhui <github.com/whiteCcinn>
 
 COPY flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz ./
 #RUN wget https://archive.apache.org/dist/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz

@@ -2,7 +2,7 @@ FROM flinkjob_hadoop-master:latest
 
 ARG HIVE_VERSION=3.1.0
 
-MAINTAINER caiwenhui <caiwenhui591@mingchao.com>
+MAINTAINER caiwenhui <github.com/whiteCcinn>
 
 COPY apache-hive-${HIVE_VERSION}-bin.tar.gz ./
 #RUN wget https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz

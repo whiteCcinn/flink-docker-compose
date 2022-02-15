@@ -3,7 +3,7 @@ FROM ubuntu:${UBUNTU_VERSION}
 
 ARG HADOOP_VERSION=3.1.1
 
-MAINTAINER caiwenhui <caiwenhui591@mingchao.com>
+MAINTAINER caiwenhui <github.com/whiteCcinn>
 
 RUN echo "" > /etc/apt/sources.list; \
     echo "deb http://mirrors.aliyun.com/ubuntu/ focal main restricted universe multiverse" >> /etc/apt/sources.list;  \
